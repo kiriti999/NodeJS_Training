@@ -1,8 +1,10 @@
-const http = require('http'); // Import Node.js core module
+// Import Node.js core modules
+const http = require('http'); 
 const url = require("url");
 const fs = require('fs');
 
-http.createServer(function (req, res) {   //create web server
+//create web server
+http.createServer(function (req, res) {   
     const query = url.parse(req.url, true);
     const route = query.pathname;
 
