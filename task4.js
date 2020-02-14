@@ -1,12 +1,19 @@
 const http = require('http'); // Import Node.js core module
 const url = require("url");
 const fs = require('fs');
-const qs = require('querystring');
 
-var server = http.createServer(function (req, res) {   //create web server
+http.createServer(function (req, res) {   //create web server
     const query = url.parse(req.url, true);
-    const filePath = JSON.parse(JSON.stringify(query.query)).path;
     const route = query.pathname;
+
+    let WriteFilePath = '';
+    let body = '';
+    req.on('data', chunk => {
+        body += chunk;
+    });
+    req.on('end', () => {
+        WriteFilePath = body.toString().split('\n')[3].trim();
+    });
 
     // Default
     if (req.url == '/') {
@@ -14,61 +21,70 @@ var server = http.createServer(function (req, res) {   //create web server
         res.write('<html><body><p>This is home Page.</p></body></html>');
         res.end();
     }
+
     // Read
     else if (route == "/readFile" && req.method === 'GET') {
-        console.log('filePath ', filePath);
-        fs.readFile(filePath, 'utf8', (err, text) => {
-            if (err) {
-                sendError(err, res);
-            } else {
-                res.write(text);
-                res.end();
-            }
-        });
+        const filePath = JSON.parse(JSON.stringify(query.query)).path;
+        readFile(res, filePath);
     }
+
+    //write
     else if (route == "/writeFile" && req.method === 'POST') {
-
-        let WriteFilePath = '';
-        let body = '';
-        req.on('data', chunk => {
-            body += chunk;
-        });
-        req.on('end', () => {
-            WriteFilePath = body.toString().split('\n')[3].trim();
-            console.log('WriteFilePath: ', WriteFilePath);
-        });
-
-        fs.stat('D:/e5/NodeJS_Training/data.txt', (err, stats) => {
-            if (err) {
-                console.error(err);
-                return
-            }
-            if (stats.isFile()) {
-                fs.writeFileSync('D:/e5/NodeJS_Training/data.txt', JSON.stringify('updated'), { flag: 'w' });
-                res.end('file updated');
-            } else {
-                sendError(err);
-            }
-        })
+        writeFile(res, 'D:/e5/NodeJS_Training/data.txt');
+        // writeFile(res, WriteFilePath);
     }
+
+    //delete
     else if (route == "/deleteFile" && req.method === 'DELETE') {
-        fs.unlink('D:/e5/NodeJS_Training/data.txt', function (err) {
-            if (err) {
-                sendError(err);
-            } else {
-                res.end('file deleted!');
-            };
-        });
+        deleteFile(res, WriteFilePath);
     }
+
     else
         res.end('Invalid req!');
-});
+}).listen(5000);
 
-server.listen(5000); //6 - listen for any incoming reqs
 
-console.log('Node.js web server at port 5000 is running..');
+function readFile(res, path) {
+    console.log('read path:', path);
+    fs.readFile(path || 'D:/e5/NodeJS_Training/data.txt', 'utf8', (err, text) => {
+        if (err) {
+            sendError(res, err);
+        } else {
+            res.write(text);
+            res.end();
+        }
+    });
+}
 
-function sendError(err, res) {
+function writeFile(res, path) {
+    console.log('write path:', path);
+    fs.stat(path, (err, stats) => {
+        if (err) {
+            sendError(res, err);
+            console.error(err);
+            return
+        }
+        if (stats.isFile()) {
+            fs.writeFileSync(path || 'D:/e5/NodeJS_Training/data.txt', JSON.stringify('updated'), { flag: 'w' });
+            res.end('file updated');
+        } else {
+            sendError(err);
+        }
+    })
+}
+
+function deleteFile(res, path) {
+    console.log('delete path:', path);
+    fs.unlink(path || 'D:/e5/NodeJS_Training/data.txt', function (err) {
+        if (err) {
+            sendError(res, err);
+        } else {
+            res.end('file deleted!');
+        };
+    });
+}
+
+function sendError(res, err) {
     if (err.errno && err.errno === -4058) {
         console.log(`File not found, Error code: ${err.errno.toString()}`);
         res.end(`File not found, Error code: ${err.errno.toString()}`);
