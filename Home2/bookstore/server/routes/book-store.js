@@ -6,17 +6,33 @@ const booksJson = require('./../books.json');
 
 
 router.get('/books', (req, res, next) => {
-    // BookStore.find({}, (err, books) => {
-    //     res.json({
-    //         success: true,
-    //         message: "Success",
-    //         books: booksJson
-    //     })
-    // })
-    res.json({
-        success: true,
-        message: "Success",
-        books: booksJson
+    console.log('getting books...');
+    BookStore.find({}, (err, books) => {
+        if (err) {
+            console.log('error getting books ', err);
+        } else {
+            res.json({
+                success: true,
+                message: "Success",
+                books: books
+            })
+        }
+    })
+});
+
+router.post('/books/save', (req, res, next) => {
+    var bookStore = new BookStore(req.body);
+    bookStore.save();
+
+    bookStore.save(function (err, savedBooks) {
+        if (err) {
+            console.log('error saving books ', err);
+        }
+        res.json({
+            success: true,
+            message: "Success",
+            books: savedBooks
+        });
     })
 });
 

@@ -4,6 +4,9 @@ const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
 const config = require('./config');
 const app = express();
+app.use(bodyParser.json());
+app.use(bodyParser({ limit: '10mb' }));
+app.use(bodyParser.urlencoded({ extended: true }));
 
 app.set('port', process.env.PORT || config.port);
 mongoose.connect(config.database, { autoIndex: false }, () => {
@@ -18,10 +21,7 @@ app.listen(app.get('port'), function () {
   console.log('Node app is running on port', app.get('port'));
 });
 app.use('/api', bookRoutes);
-app.use(bodyParser({ limit: '10mb' }));
 app.use(express.static(path.join(__dirname, '../dist')));
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
 const router = require('express').Router();
 // Task 1
 
